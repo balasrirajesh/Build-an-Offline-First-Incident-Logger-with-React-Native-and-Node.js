@@ -1,0 +1,23 @@
+{
+  "name": "incident-logger-root",
+  "version": "1.0.0",
+  "description": "Offline-First Incident Logger (React Native Mobile + Node.js Backend)",
+  "private": true,
+  "scripts": {
+    "test": "jest --detectOpenHandles --forceExit",
+    "test:backend": "npm --prefix backend test",
+    "test:mobile": "npm --prefix mobile-app test",
+    "start:backend": "npm --prefix backend start",
+    "start:mobile": "npm --prefix mobile-app start"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/tests/**/*.test.js",
+      "**/__tests__/**/*.test.js"
+    ]
+  }
+}
