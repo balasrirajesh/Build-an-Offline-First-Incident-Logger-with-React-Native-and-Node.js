@@ -34,7 +34,7 @@ The application adopts the **Offline-First Architectural Pattern**:
 │  ┌───────────────────────┐        ┌──────────────────────┐  │
 │  │   POST /api/incidents │        │  GET /api/incidents  │  │
 │  │   (Bulk Upsert &      │        │  (Paginated & Delta  │  │
-│  │    Multer Photo Upload│        │   last_synced_at)    │  │
+│  │   Multer Photo Upload)│        │   last_synced_at)    │  │
 │  └───────────┬───────────┘        └──────────┬───────────┘  │
 │              │                               │              │
 │              ▼                               ▼              │
@@ -237,7 +237,7 @@ Bulk synchronize and upsert incidents with multipart file attachments.
   ]
 }
 ```
-
+.
 ---
 
 ## 📱 Testing Contract Elements
