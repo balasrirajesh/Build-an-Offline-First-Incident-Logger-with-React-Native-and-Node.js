@@ -16,18 +16,35 @@ let dbInstance = null;
 // In-memory table representation for Node / Web / Test environments
 const inMemoryIncidents = new Map();
 
+let Platform = null;
+try {
+  Platform = require('react-native').Platform;
+} catch (e) {
+  Platform = { OS: 'node' };
+}
+
 /**
  * Open or create the local SQLite database
  */
 async function getDb() {
   if (dbInstance) return dbInstance;
 
-  if (expoSQLite && typeof expoSQLite.openDatabaseSync === 'function') {
-    dbInstance = expoSQLite.openDatabaseSync('incident_logger.db');
-  } else if (expoSQLite && typeof expoSQLite.openDatabaseAsync === 'function') {
-    dbInstance = await expoSQLite.openDatabaseAsync('incident_logger.db');
-  } else if (expoSQLite && typeof expoSQLite.openDatabase === 'function') {
-    dbInstance = expoSQLite.openDatabase('incident_logger.db');
+  // On Web or non-native platforms, use the in-memory fallback immediately
+  if (Platform && Platform.OS === 'web') {
+    return null;
+  }
+
+  try {
+    if (expoSQLite && typeof expoSQLite.openDatabaseSync === 'function') {
+      dbInstance = expoSQLite.openDatabaseSync('incident_logger.db');
+    } else if (expoSQLite && typeof expoSQLite.openDatabaseAsync === 'function') {
+      dbInstance = await expoSQLite.openDatabaseAsync('incident_logger.db');
+    } else if (expoSQLite && typeof expoSQLite.openDatabase === 'function') {
+      dbInstance = expoSQLite.openDatabase('incident_logger.db');
+    }
+  } catch (err) {
+    console.warn('Could not initialize native SQLite DB, falling back to in-memory store:', err.message);
+    dbInstance = null;
   }
 
   return dbInstance;
@@ -37,34 +54,38 @@ async function getDb() {
  * Initialize SQLite table schema according to contract specifications
  */
 async function initDatabase() {
-  const db = await getDb();
-  const createTableSQL = `
-    CREATE TABLE IF NOT EXISTS incidents (
-      local_id TEXT PRIMARY KEY NOT NULL,
-      server_id TEXT NULL,
-      description TEXT NOT NULL,
-      severity TEXT NOT NULL,
-      photo_uri TEXT NULL,
-      sync_status TEXT NOT NULL,
-      updated_at TEXT NOT NULL,
-      latitude REAL NULL,
-      longitude REAL NULL,
-      server_version TEXT NULL
-    );
-  `;
+  try {
+    const db = await getDb();
+    const createTableSQL = `
+      CREATE TABLE IF NOT EXISTS incidents (
+        local_id TEXT PRIMARY KEY NOT NULL,
+        server_id TEXT NULL,
+        description TEXT NOT NULL,
+        severity TEXT NOT NULL,
+        photo_uri TEXT NULL,
+        sync_status TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        latitude REAL NULL,
+        longitude REAL NULL,
+        server_version TEXT NULL
+      );
+    `;
 
-  if (db) {
-    if (typeof db.execAsync === 'function') {
-      await db.execAsync(createTableSQL);
-    } else if (typeof db.execSync === 'function') {
-      db.execSync(createTableSQL);
-    } else if (typeof db.transaction === 'function') {
-      await new Promise((resolve, reject) => {
-        db.transaction(tx => {
-          tx.executeSql(createTableSQL, [], () => resolve(), (_, err) => reject(err));
+    if (db) {
+      if (typeof db.execAsync === 'function') {
+        await db.execAsync(createTableSQL);
+      } else if (typeof db.execSync === 'function') {
+        db.execSync(createTableSQL);
+      } else if (typeof db.transaction === 'function') {
+        await new Promise((resolve, reject) => {
+          db.transaction(tx => {
+            tx.executeSql(createTableSQL, [], () => resolve(), (_, err) => reject(err));
+          });
         });
-      });
+      }
     }
+  } catch (err) {
+    console.warn('initDatabase encountered error, using memory store:', err.message);
   }
 
   return true;

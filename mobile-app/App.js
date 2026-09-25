@@ -43,9 +43,10 @@ export default function App() {
         await initDatabase();
         await loadIncidents();
         syncService.startNetworkListener();
-        setIsInitialized(true);
       } catch (err) {
         console.error('Setup error:', err);
+      } finally {
+        setIsInitialized(true);
       }
     }
     setup();
